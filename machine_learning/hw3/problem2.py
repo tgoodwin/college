@@ -26,21 +26,22 @@ def main():
 
 	train_matrix, test_matrix = unigram(review_docs, test_text)
 	print train_matrix.shape, test_matrix.shape
-	# MODIFY DATA FOR BAYES
+	# modify data for naive bayes (only count each word once)
 	nonzero_train_idx = np.nonzero(train_matrix)
 	nonzero_test_idx = np.nonzero(test_matrix)
 	train_matrix[nonzero_train_idx] = 1
 	test_matrix[nonzero_test_idx] = 1
 
+	# NAIVE BAYES
 	average_bayes_error = five_fold_cross_validation(train_matrix, review_labels, "bayes")
+	print "Avg error for naive Bayes with 5-fold cross validation: [%s]" % str(average_bayes_error)
 
 	# RUN PERCEPTRON ON REPRESENTATIONS
 	# build unigram representation
 	train_matrix, test_matrix = unigram(review_docs, test_text)
 	print train_matrix.shape
-	w, b = train_average_perceptron(train_matrix, review_labels)
-	error_rate = test_average_perceptron(test_matrix, test_labels, w, b)
-	print "error rate:", str(error_rate)
+	avg_unigram_error = five_fold_cross_validation(train_matrix, review_labels, "perceptron")
+	print "Avg error for unigram Perceptron with 5-fold cross validation: [%s]" % str(avg_unigram_error)
 
 	# use count matrix to build IDF representation
 	#idf_matrix = build_tf_idf(train_matrix)
@@ -54,22 +55,22 @@ def five_fold_cross_validation(X, Y, estimator):
 	errorSum = 0
 	for train, test in five_fold.split(X):
 		n += 1
-		print "Train: %s | test: %s" % (train, test)
+		# print "Train: %s | test: %s" % (train, test)
 		if estimator == "perceptron":
 			weights, bias = train_average_perceptron(X[train], Y[train])
 			error = test_average_perceptron(X[test], Y[test], weights, bias)
 			errorSum += error
-			print "%s error, trial %d: %s" % (estimator, n, str(error))
+			print "%s error on trial #%d: %s" % (estimator, n, str(error))
 		if estimator == "bayes":
 			class_priors = get_priors(X[train], Y[train], classNum=2)
 			class_conditionals = get_class_conditionals(X[train], Y[train], classNum=2)
 			test_preds = test_input(X[test], class_priors, class_conditionals)
 			error = get_error_rate(test_preds, Y[test])
 			errorSum += error
-			print "%s error, trial %d: %s" % (estimator, n, str(error))
+			print "%s error on trial #%d: %s" % (estimator, n, str(error))
 
 	avg_error = float(errorSum) / float(5)
-	print "avg error for 5-fold cross validation on %s: %s" % (estimator, str(avg_error))
+	# print "avg error for 5-fold cross validation on %s: [%s]" % (estimator, str(avg_error))
 	return avg_error
 
 # ------------- DATA REPRESENTATIONS -------------- #
