@@ -27,12 +27,12 @@ def main():
 	train_matrix, test_matrix = unigram(review_docs, test_text)
 	print train_matrix.shape, test_matrix.shape
 	# MODIFY DATA FOR BAYES
-	nonzero_train = np.nonzero(train_matrix)
-	nonzero_test = np.nonzero(test_matrix)
-	train_matrix[nonzero_train] = 1
-	test_matrix[nonzero_test] = 1
+	nonzero_train_idx = np.nonzero(train_matrix)
+	nonzero_test_idx = np.nonzero(test_matrix)
+	train_matrix[nonzero_train_idx] = 1
+	test_matrix[nonzero_test_idx] = 1
 
-	average_bayes_error = five_fold_cross_validation(DATA, LABELS, "bayes")
+	average_bayes_error = five_fold_cross_validation(train_matrix, review_labels, "bayes")
 
 	# RUN PERCEPTRON ON REPRESENTATIONS
 	# build unigram representation
@@ -192,7 +192,7 @@ def get_error_rate(preds, labels):
 		if (int(preds[i]) != int(labels[i])):
 			errorCount += 1
 		totalCount += 1
-	return str(float(errorCount) / float(totalCount))
+	return float(errorCount) / float(totalCount)
 
 if __name__ == "__main__":
 	main()
