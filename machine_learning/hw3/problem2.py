@@ -25,33 +25,34 @@ def main():
 	test_labels[zeros] = -1
 
 	print "RUNNING NAIVE BAYES ON UNIGRAM:"
-	train_matrix, test_matrix = build_unigram(review_docs, test_text)
-	print train_matrix.shape, test_matrix.shape
+	unigram_train, unigram_test = build_unigram(review_docs, test_text)
+	print unigram_train.shape, unigram_test.shape
 	# modify data for naive bayes (only count each word once)
-	nonzero_train_idx = np.nonzero(train_matrix)
-	nonzero_test_idx = np.nonzero(test_matrix)
-	train_matrix[nonzero_train_idx] = 1
-	test_matrix[nonzero_test_idx] = 1
-	average_bayes_error = five_fold_cross_validation(train_matrix, review_labels, "bayes")
+	nonzero_train_idx = np.nonzero(unigram_train)
+	nonzero_test_idx = np.nonzero(unigram_test)
+	unigram_train[nonzero_train_idx] = 1
+	unigram_test[nonzero_test_idx] = 1
+	average_bayes_error = five_fold_cross_validation(unigram_train, review_labels, "bayes")
 	print "Avg error for NAIVE BAYES with 5-fold cross validation: [%s]" % str(average_bayes_error)
 
 	print "RUNNING PERCEPTRON ON UNIGRAM:"
-	train_matrix, test_matrix = build_unigram(review_docs, test_text)
-	avg_unigram_error = five_fold_cross_validation(train_matrix, review_labels, "perceptron")
+	# rebuild unigram sparse matrices
+	unigram_train, unigram_test = build_unigram(review_docs, test_text)
+	avg_unigram_error = five_fold_cross_validation(unigram_train, review_labels, "perceptron")
 	print "Avg error for UNIGRAM Perceptron with 5-fold cross validation: [%s]" % str(avg_unigram_error)
 
 	print "RUNNING PERCEPTRON ON BIGRAM:"
-	train_matrix, test_matrix = build_bigram(review_docs, test_text)
-	avg_bigram_error = five_fold_cross_validation(train_matrix, review_labels, "perceptron")
+	bigram_train, bigram_test = build_bigram(review_docs, test_text)
+	avg_bigram_error = five_fold_cross_validation(bigram_train, review_labels, "perceptron")
 	print "Avg error for BIGRAM Perceptron with 5-fold cross validation: [%s]" % str(avg_bigram_error)
 
 	print "RUN PERCEPTRON ON TF-IDF:"
-	train_matrix, test_matrix = build_tf_idf(review_docs, test_text)
+	train_matrix, test_matrix = build_tf_idf(unigram_train, unigram_test)
 	avg_idf_error = five_fold_cross_validation(train_matrix, review_labels, "perceptron")
 	print "Avg error for TF-IDF Perceptron with 5-fold cross validation: [%s]" % str(avg_idf_error)
 
 	print "RUN PERCEPTRON ON SUBLINEAR:"
-	train_matrix, test_matrix = build_tf_sublinear(review_docs, test_text)
+	train_matrix, test_matrix = build_tf_sublinear(unigram_train, unigram_test)
 	avg_sublinear_error = five_fold_cross_validation(train_matrix, review_labels, "perceptron")
 	print "Avg error for SUBLINEAR Perceptron with 5-fold cross validation: [%s]" % str(avg_sublinear_error)
 
@@ -82,24 +83,28 @@ def five_fold_cross_validation(X, Y, estimator):
 
 # ------------- DATA REPRESENTATIONS -------------- #
 
+# takes in raw data
 def build_unigram(training_data, test_data):
 	vectorizer = CountVectorizer()
 	unigram_tr = vectorizer.fit_transform(training_data)
 	unigram_te = vectorizer.transform(test_data)
 	return unigram_tr, unigram_te
 
+# takes in raw data
 def build_bigram(training_data, test_data):
 	bigram_vectorizer = CountVectorizer(ngram_range=(1,2))
 	bigram_tr = bigram_vectorizer.fit_transform(training_data)
 	bigram_te = bigram_vectorizer.transform(test_data)
 	return bigram_tr, bigram_te
 
+# takes in sparce matrices
 def build_tf_idf(training_data, test_data):
 	transformer = TfidfTransformer(use_idf=True, smooth_idf=False)
 	idf_tr = transformer.fit_transform(training_data)
 	idf_te = transformer.transform(test_data)
 	return idf_tr, idf_te
 
+# takes in sparce matrices
 def build_tf_sublinear(training_data, test_data):
 	transformer = TfidfTransformer(use_idf=True, smooth_idf=False, sublinear_tf=True)
 	sublinear_tr = transformer.fit_transform(training_data)
