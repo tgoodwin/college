@@ -36,12 +36,15 @@ def main():
 	average_bayes_error = five_fold_cross_validation(train_matrix, review_labels, "bayes")
 	print "Avg error for naive Bayes with 5-fold cross validation: [%s]" % str(average_bayes_error)
 
-	# RUN PERCEPTRON ON REPRESENTATIONS
+	# RUN PERCEPTRON ON UNIGRAM
 	# build unigram representation
 	train_matrix, test_matrix = unigram(review_docs, test_text)
 	print train_matrix.shape
 	avg_unigram_error = five_fold_cross_validation(train_matrix, review_labels, "perceptron")
 	print "Avg error for unigram Perceptron with 5-fold cross validation: [%s]" % str(avg_unigram_error)
+
+	train_matrix, test_matrix = build_bigram(review_docs, test_text)
+	avg_bigram_error = five_fold_Cross_validation(train_matrix, review_labels, "perceptron")
 
 	# use count matrix to build IDF representation
 	#idf_matrix = build_tf_idf(train_matrix)
@@ -115,13 +118,11 @@ def train_average_perceptron(X, Y):
 	b = 0 	#bias
 	B = 0 	#cached bias
 	c = 1 	#counter
-	print "y", Y.shape
-	print "w", w.shape
+	#print "y", Y.shape
+	#print "w", w.shape
 
 	for i in range(np.shape(X)[0]):
 		a = X[i] * w.T + b
-		print a * Y[i][0]
-		print "----"
 		if (a * Y[i][0] <= 0):
 			w = w + Y[i][0] * X[i]
 			b = b + Y[i][0]
@@ -133,8 +134,8 @@ def train_average_perceptron(X, Y):
 	return w - (1 / c) * u, b - (1 / c) * B
 
 def test_average_perceptron(X, Y, w, b):
-	print w.shape
-	print X.shape
+	#print w.shape
+	#print X.shape
 	res = X * w.T + b
 	signs = np.sign(res)
 	temp = np.multiply(Y, signs)
@@ -143,7 +144,7 @@ def test_average_perceptron(X, Y, w, b):
 
 #  // Naive Bayes //
 def get_priors(X, Y, classNum):
-	print "getting priors"
+#	print "getting priors"
 	sparse_priors = np.zeros((classNum, len(Y)))
 	count = 0
 	# brittle solution for skipping over labels we don't care about.
@@ -160,7 +161,7 @@ def get_priors(X, Y, classNum):
 	return class_priors
 
 def get_class_conditionals(X, Y, classNum):
-	print "getting conditionals"
+#	print "getting conditionals"
 	sparse_conditionals = np.zeros((classNum, len(Y)))
 	#sparse matrix identifying every label (column) as 'positive' or 'negative' via a 1 in a respective class (row)
 	for i in range(classNum):
@@ -174,7 +175,7 @@ def get_class_conditionals(X, Y, classNum):
 
 def test_input(X, priors, conditionals):
 	# log(pi) + Sum_d(log(1 - u)) + Sum_d(log(u) - log(1 - u)) * xj of the form alpha_0 + x_j*a_j
-	print "testing input"
+#	print "testing input"
 	x_complement = np.ones(X.shape, dtype=np.float32) - X #(1 - Xj) matrix of 0's and 1's
 	u_complement = np.ones(conditionals.shape, dtype=np.float32) - conditionals #(1 - u_yj)
 	log_u = np.log(conditionals)
