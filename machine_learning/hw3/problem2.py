@@ -7,7 +7,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.model_selection import KFold, cross_val_score
 
-INPUT_SIZE = 200
+INPUT_SIZE = 20000
 
 def main():
 	# read in csv text, modify training data and labels
@@ -140,13 +140,19 @@ def train_average_perceptron(X, Y):
 	return w - (1 / c) * u, b - (1 / c) * B
 
 def test_average_perceptron(X, Y, w, b):
-	#print w.shape
-	#print X.shape
+	#print "w", w.shape
+	#print "X", X.shape
+	#print "Y", Y.shape
 	res = X * w.T + b
 	signs = np.sign(res)
-	temp = np.multiply(Y, signs)
-	num_correct = len(np.where(temp > 0))
-	return float(num_correct) / float(len(Y)) #as error rate
+	#print "signs", signs.shape
+	errorCount = 0
+	totalCount = 0
+	for i in range(np.shape(signs)[0]):
+		if int(signs[i]) != int(Y[i]):
+			errorCount += 1
+		totalCount += 1
+	return float(errorCount) / float(totalCount) #as error rate
 
 #  // Naive Bayes //
 def get_priors(X, Y, classNum):
