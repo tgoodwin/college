@@ -6,7 +6,7 @@ import sklearn
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.model_selection import KFold, cross_val_score
-INPUT_SIZE = 20000
+INPUT_SIZE = 2000
 
 def main():
 	# read in csv text, modify training data and labels
@@ -89,10 +89,10 @@ def main():
 		training_err, test_err = evaluate_perceptron(bigram_train, training_labels, bigram_test, test_labels)
 	elif best_classifier == 4:
 		print "Best: Perceptron on TF-IDF"
-		training_err, test_err = evalute_perceptron(idf_train, training_labels, idf_test, test_labels)
+		training_err, test_err = evaluate_perceptron(idf_train, training_labels, idf_test, test_labels)
 	elif best_classifier == 5:
 		print "Best: Perceptron on Sublinear"
-		training_err, test_err = evalute_perceptron(sublinear_train, training_labels, sublinear_test, test_labels)
+		training_err, test_err = evaluate_perceptron(sublinear_train, training_labels, sublinear_test, test_labels)
 	print "Best classifier training error: [%s] and test error [%s]" % (training_err, test_err)
 
 def evaluate_perceptron(tr_data, tr_labels, te_data, te_labels):
