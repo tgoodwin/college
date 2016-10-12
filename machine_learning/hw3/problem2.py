@@ -72,26 +72,25 @@ def main():
 		min_error = avg_sublinear_error
 		best_classifier = 5
 
-	evaluate_best_classifier(best_classifier)
+	# now train best classifier on training data and evaluate on test data.
 
-def evaluate_best_classifier(classifier):
-	if classifier == 1:
+	if best_classifier == 1:
 		print "Best: Naive Bayes on Unigram"
 		priors, conditionals = train_naive_bayes(bayes_unigram_train, training_labels, classNum=2)
 		training_preds = test_input(bayes_unigram_train, priors, conditionals)
 		training_error = get_error_rate(training_preds, training_labels)
 		test_preds = get_input(bayes_unigram_test, priors, conditionals)
 		test_error = get_error_rate(test_preds, test_labels)
-	elif classifier == 2:
+	elif best_classifier == 2:
 		print "Best: Perceptron on Unigram"
 		training_err, test_err = evaluate_perceptron(unigram_train, training_labels, unigram_test, test_labels)
-	elif classifier == 3:
+	elif best_classifier == 3:
 		print "Best: Perceptron on Bigram"
 		training_err, test_err = evaluate_perceptron(bigram_train, training_labels, bigram_test, test_labels)
-	elif classifier == 4:
+	elif best_classifier == 4:
 		print "Best: Perceptron on TF-IDF"
 		training_err, test_err = evalute_perceptron(idf_train, training_labels, idf_test, test_labels)
-	elif classifier == 5:
+	elif best_classifier == 5:
 		print "Best: Perceptron on Sublinear"
 		training_err, test_err = evalute_perceptron(sublinear_train, training_labels, sublinear_test, test_labels)
 	print "Best classifier training error: [%s] and test error [%s]" % (training_err, test_err)
