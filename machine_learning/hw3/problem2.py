@@ -218,14 +218,15 @@ def get_class_conditionals(X, Y, classNum):
 
 def test_input(X, priors, conditionals):
 	# log(pi) + Sum_d(log(1 - u)) + Sum_d(log(u) - log(1 - u)) * xj of the form alpha_0 + x_j*a_j
-	x_complement = np.ones(X.shape, dtype=np.float32) - X #(1 - Xj) matrix of 0's and 1's
+	# x_complement = np.ones(X.shape, dtype=np.float32) - X #(1 - Xj) matrix of 0's and 1's
 	u_complement = np.ones(conditionals.shape, dtype=np.float32) - conditionals #(1 - u_yj)
 	log_u = np.log(conditionals)
 	log_u_complement = np.log(u_complement)
+	sum_log_u_complement = np.sum(log_u_complement, axis=0).reshape(priors.shape)
 	normal_term = X * log_u 
-	complement_term = x_complement * log_u_complement
+	complement_term = -1 * X * log_u_complement
 	#end summation, add log priors
-	final = (normal_term + complement_term) + np.log(priors)
+	final = sum_log_u_complement + (normal_term + complement_term) + np.log(priors)
 	preds = np.argmax(final, axis=1) + 1 # add 1 since python is 0 indexed
 	return preds
 
