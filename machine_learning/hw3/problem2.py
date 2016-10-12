@@ -15,6 +15,7 @@ def main():
 	training_labels = training['label'][0:INPUT_SIZE].values.reshape((INPUT_SIZE, 1))
 	zeros = np.where(training_labels == 0)
 	training_labels[zeros] = -1
+	del training, zeros
 
 	# read in csv, modify test 
 	test = pd.read_csv('reviews_te.csv')
@@ -22,18 +23,19 @@ def main():
 	test_labels = test['label'][0:INPUT_SIZE].values.reshape((INPUT_SIZE, 1))
 	zeros = np.where(test_labels == 0)
 	test_labels[zeros] = -1
+	del test, zeros
 
 	min_error = float('inf')
 	best_classifier = 0
 
 	print "1. RUNNING NAIVE BAYES ON UNIGRAM:"
 	bayes_unigram_train, bayes_unigram_test = build_unigram(training_text, test_text)
-	print bayes_unigram_train.shape, bayes_unigram_test.shape
 	# modify data for naive bayes (only count each word once)
 	nonzero_train_idx = np.nonzero(bayes_unigram_train)
 	nonzero_test_idx = np.nonzero(bayes_unigram_test)
 	bayes_unigram_train[nonzero_train_idx] = 1
 	bayes_unigram_test[nonzero_test_idx] = 1
+	del nonzero_test_idx, nonzero_train_idx
 	average_bayes_error = five_fold_cross_validation(bayes_unigram_train, training_labels, "bayes")
 	print "Avg error for NAIVE BAYES with 5-fold cross validation: [%s]" % str(average_bayes_error)
 	if average_bayes_error < min_error:
