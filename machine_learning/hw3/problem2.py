@@ -6,16 +6,15 @@ import sklearn
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.model_selection import KFold, cross_val_score
-
 INPUT_SIZE = 20000
 
 def main():
 	# read in csv text, modify training data and labels
-	df = pd.read_csv('reviews_tr.csv')
-	review_docs = df['text'][0:INPUT_SIZE]
-	review_labels = df['label'][0:INPUT_SIZE].values.reshape((INPUT_SIZE, 1))
-	zeros = np.where(review_labels == 0)
-	review_labels[zeros] = -1
+	training = pd.read_csv('reviews_tr.csv')
+	training_text = training['text'][0:INPUT_SIZE]
+	training_labels = training['label'][0:INPUT_SIZE].values.reshape((INPUT_SIZE, 1))
+	zeros = np.where(training_labels == 0)
+	training_labels[zeros] = -1
 
 	# read in csv, modify test 
 	test = pd.read_csv('reviews_te.csv')
@@ -24,61 +23,104 @@ def main():
 	zeros = np.where(test_labels == 0)
 	test_labels[zeros] = -1
 
-	print "RUNNING NAIVE BAYES ON UNIGRAM:"
-	unigram_train, unigram_test = build_unigram(review_docs, test_text)
-	print unigram_train.shape, unigram_test.shape
+	min_error = float('inf')
+	best_classifier = 0
+
+	print "1. RUNNING NAIVE BAYES ON UNIGRAM:"
+	bayes_unigram_train, bayes_unigram_test = build_unigram(training_text, test_text)
+	print bayes_unigram_train.shape, bayes_unigram_test.shape
 	# modify data for naive bayes (only count each word once)
-	nonzero_train_idx = np.nonzero(unigram_train)
-	nonzero_test_idx = np.nonzero(unigram_test)
-	unigram_train[nonzero_train_idx] = 1
-	unigram_test[nonzero_test_idx] = 1
-	average_bayes_error = five_fold_cross_validation(unigram_train, review_labels, "bayes")
+	nonzero_train_idx = np.nonzero(bayes_unigram_train)
+	nonzero_test_idx = np.nonzero(bayes_unigram_test)
+	bayes_unigram_train[nonzero_train_idx] = 1
+	bayes_unigram_test[nonzero_test_idx] = 1
+	average_bayes_error = five_fold_cross_validation(bayes_unigram_train, training_labels, "bayes")
 	print "Avg error for NAIVE BAYES with 5-fold cross validation: [%s]" % str(average_bayes_error)
+	if average_bayes_error < min_error:
+		min_error = average_bayes_error
+		best_classifier = 1
 
-	print "RUNNING PERCEPTRON ON UNIGRAM:"
-	# rebuild unigram sparse matrices
-	unigram_train, unigram_test = build_unigram(review_docs, test_text)
-	avg_unigram_error = five_fold_cross_validation(unigram_train, review_labels, "perceptron")
+	print "2. RUNNING PERCEPTRON ON UNIGRAM:"
+	unigram_train, unigram_test = build_unigram(training_text, test_text)
+	avg_unigram_error = five_fold_cross_validation(unigram_train, training_labels, "perceptron")
 	print "Avg error for UNIGRAM Perceptron with 5-fold cross validation: [%s]" % str(avg_unigram_error)
+	if avg_unigram_error < min_error:
+		min_error = avg_unigram_error
+		best_classifier = 2
 
-	print "RUNNING PERCEPTRON ON BIGRAM:"
-	bigram_train, bigram_test = build_bigram(review_docs, test_text)
-	avg_bigram_error = five_fold_cross_validation(bigram_train, review_labels, "perceptron")
+	print "3. RUNNING PERCEPTRON ON BIGRAM:"
+	bigram_train, bigram_test = build_bigram(training_text, test_text)
+	avg_bigram_error = five_fold_cross_validation(bigram_train, training_labels, "perceptron")
 	print "Avg error for BIGRAM Perceptron with 5-fold cross validation: [%s]" % str(avg_bigram_error)
+	if avg_bigram_error < min_error:
+		min_error = avg_bigram_error
+		best_classifier = 3
 
-	print "RUN PERCEPTRON ON TF-IDF:"
-	train_matrix, test_matrix = build_tf_idf(unigram_train, unigram_test)
-	avg_idf_error = five_fold_cross_validation(train_matrix, review_labels, "perceptron")
+	print "4. RUN PERCEPTRON ON TF-IDF:"
+	idf_train, idf_test = build_tf_idf(unigram_train, unigram_test)
+	avg_idf_error = five_fold_cross_validation(idf_train, training_labels, "perceptron")
 	print "Avg error for TF-IDF Perceptron with 5-fold cross validation: [%s]" % str(avg_idf_error)
+	if avg_idf_error < min_error:
+		min_error = avg_idf_error
+		best_classifier = 4
 
-	print "RUN PERCEPTRON ON SUBLINEAR:"
-	train_matrix, test_matrix = build_tf_sublinear(unigram_train, unigram_test)
-	avg_sublinear_error = five_fold_cross_validation(train_matrix, review_labels, "perceptron")
+	print "5. RUN PERCEPTRON ON SUBLINEAR:"
+	sublinear_train, sublinear_test = build_tf_sublinear(unigram_train, unigram_test)
+	avg_sublinear_error = five_fold_cross_validation(sublinear_train, training_labels, "perceptron")
 	print "Avg error for SUBLINEAR Perceptron with 5-fold cross validation: [%s]" % str(avg_sublinear_error)
+	if avg_sublinear_error < min_error:
+		min_error = avg_sublinear_error
+		best_classifier = 5
 
-	
+	evaluate_best_classifier(best_classifier)
+
+def evaluate_best_classifier(classifier):
+	if classifier == 1:
+		print "Best: Naive Bayes on Unigram"
+		priors, conditionals = train_naive_bayes(bayes_unigram_train, training_labels, classNum=2)
+		training_preds = test_input(bayes_unigram_train, priors, conditionals)
+		training_error = get_error_rate(training_preds, training_labels)
+		test_preds = get_input(bayes_unigram_test, priors, conditionals)
+		test_error = get_error_rate(test_preds, test_labels)
+	elif classifier == 2:
+		print "Best: Perceptron on Unigram"
+		training_err, test_err = evaluate_perceptron(unigram_train, training_labels, unigram_test, test_labels)
+	elif classifier == 3:
+		print "Best: Perceptron on Bigram"
+		training_err, test_err = evaluate_perceptron(bigram_train, training_labels, bigram_test, test_labels)
+	elif classifier == 4:
+		print "Best: Perceptron on TF-IDF"
+		training_err, test_err = evalute_perceptron(idf_train, training_labels, idf_test, test_labels)
+	elif classifier == 5:
+		print "Best: Perceptron on Sublinear"
+		training_err, test_err = evalute_perceptron(sublinear_train, training_labels, sublinear_test, test_labels)
+	print "Best classifier training error: [%s] and test error [%s]" % (training_err, test_err)
+
+def evaluate_perceptron(tr_data, tr_labels, te_data, te_labels):
+	weights, bias = train_average_perceptron(tr_data, tr_labels)
+	training_error = test_average_perceptron(tr_data, tr_labels, weights, bias)
+	w2, b2 = train_average_perceptron(te_data, te_labels)
+	test_error = test_average_perceptron(te_data, te_labels, w2, b2)
+	return training_error, test_error
+
 def five_fold_cross_validation(X, Y, estimator):
 	five_fold = KFold(n_splits = 5)
 	n = 0
 	errorSum = 0
 	for train, test in five_fold.split(X):
 		n += 1
-		# print "Train: %s | test: %s" % (train, test)
 		if estimator == "perceptron":
 			weights, bias = train_average_perceptron(X[train], Y[train])
 			error = test_average_perceptron(X[test], Y[test], weights, bias)
 			errorSum += error
 			print "%s error on trial #%d: %s" % (estimator, n, str(error))
 		if estimator == "bayes":
-			class_priors = get_priors(X[train], Y[train], classNum=2)
-			class_conditionals = get_class_conditionals(X[train], Y[train], classNum=2)
-			test_preds = test_input(X[test], class_priors, class_conditionals)
+			priors, conditionals = train_naive_bayes(X[train], Y[train], classNum=2)
+			test_preds = test_input(X[test], priors, conditionals)
 			error = get_error_rate(test_preds, Y[test])
 			errorSum += error
 			print "%s error on trial #%d: %s" % (estimator, n, str(error))
-
 	avg_error = float(errorSum) / float(5)
-	# print "avg error for 5-fold cross validation on %s: [%s]" % (estimator, str(avg_error))
 	return avg_error
 
 # ------------- DATA REPRESENTATIONS -------------- #
@@ -124,8 +166,6 @@ def train_average_perceptron(X, Y):
 	b = 0 	#bias
 	B = 0 	#cached bias
 	c = 1 	#counter
-	#print "y", Y.shape
-	#print "w", w.shape
 
 	for i in range(np.shape(X)[0]):
 		a = X[i] * w.T + b
@@ -134,18 +174,12 @@ def train_average_perceptron(X, Y):
 			b = b + Y[i][0]
 			u = u + Y[i] * c * X[i]
 			B = B + Y[i] * c
-		# end if
 		c = c + 1
-	# end for
 	return w - (1 / c) * u, b - (1 / c) * B
 
 def test_average_perceptron(X, Y, w, b):
-	#print "w", w.shape
-	#print "X", X.shape
-	#print "Y", Y.shape
 	res = X * w.T + b
 	signs = np.sign(res)
-	#print "signs", signs.shape
 	errorCount = 0
 	totalCount = 0
 	for i in range(np.shape(signs)[0]):
@@ -156,7 +190,6 @@ def test_average_perceptron(X, Y, w, b):
 
 #  // Naive Bayes //
 def get_priors(X, Y, classNum):
-#	print "getting priors"
 	sparse_priors = np.zeros((classNum, len(Y)))
 	count = 0
 	for i in range(len(Y)):
@@ -194,6 +227,11 @@ def test_input(X, priors, conditionals):
 	final = (normal_term + complement_term) + np.log(priors)
 	preds = np.argmax(final, axis=1) + 1 # add 1 since python is 0 indexed
 	return preds
+
+def train_naive_bayes(X, Y, classNum):
+	class_priors = get_priors(X, Y, classNum)
+	class_conditionals = get_class_conditionals(X, Y, classNum)
+	return class_priors, class_conditionals
 
 def get_error_rate(preds, labels):
 	errorCount = 0
