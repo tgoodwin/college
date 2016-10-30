@@ -4,25 +4,29 @@ from scipy.io import loadmat
 hw4data = loadmat('hw4data.mat')
 
 def main():
-    print "hey"
     data = hw4data['data']
     lifted_data = np.insert(data, 0, 1, axis=1)
     labels = hw4data['labels']
     #compute_objective(B, lifted_data, labels)
     #descend_gradient(B, lifted_data, labels, .0035)
+    B = np.zeros((1, 4))
+    #print compute_objective(B, lifted_data, labels)
     gd_handler(lifted_data, labels, 0.65064)
 
 def compute_objective(B, data, labels):
-    val = 0
-    # b is a vector of length 4
+    # b is a vector of length 4 after lifting
     b_vec = B.reshape(1, 4)
     dot = np.dot(b_vec, data.T)
+    #print dot
     # data.T is (4, 4096)
     #print dot.shape
     log_arg = 1 + np.exp(dot)
+    #print log_arg
     log_term = np.log(log_arg)
+    #print log_term
     second = labels.reshape(1, len(labels)) * dot
     temp = log_term - second
+    B = np.zeros((1, 4))
     thesum = np.sum(temp, axis=1)
     #print thesum[0] / len(labels)
     return thesum[0] / len(labels)
@@ -45,23 +49,29 @@ def descend_gradient(B, data, labels, stepsize):
     res = frac - subt
     #print res.shape
     sums = np.sum(res, axis=1)
-    gradientVal = sums / len(B)
+    gradient_t = sums / len(B)
     #print gradientVal.shape
 
     # update rule
-    b_vec = b_vec - (gradientVal * stepsize)
+    lambda_norm = np.sqrt(np.dot(gradient_t, gradient_t))
+    b_vec_update = b_vec - (stepsize * gradient_t)
+    b_vec_trial = b_vec_update
+    # backtracking line search for next step size
+    #while (compute_objective(b_vec_trial, data, labels) > (compute_objective(b_vec, data, labels) - 0.5*(stepsize)*(lambda_norm*lambda_norm))):
+     #   stepsize = 0.5 * stepsize
+      #  b_vec_trial = b_vec - (stepsize * gradient_t)
+
     #print b_vec
-    return b_vec
+    return b_vec_update, stepsize
 
 def gd_handler(data, labels, target):
     B = np.zeros((1, 4))
-    print "ok"
-    print B.shape
     steps = 0
-    while (steps < 1000):
+    stepsize = 0.0035
+    while (steps < 1):
         steps += 1
-        stepsize = 0.0035 / math.sqrt(steps)
-        B = descend_gradient(B, data, labels, stepsize)
+        B, stepsize = descend_gradient(B, data, labels, stepsize)
+        print B, stepsize
         obj = compute_objective(B, data, labels)
         print"OBJECTIVE VALUE", obj
 
