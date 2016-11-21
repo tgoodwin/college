@@ -12,10 +12,10 @@ INPUT_SIZE = 200000
 def main():
 	# read in csv text, modify training data and labels
 	training = pd.read_csv('reviews_tr.csv')
-	training_text = training['text'][0:INPUT_SIZE]
-	training_labels = training['label'][0:INPUT_SIZE].values.reshape((INPUT_SIZE, 1))
-	zeros = np.where(training_labels == 0)
-	training_labels[zeros] = -1
+	X_train = training['text'][0:INPUT_SIZE]
+	y_train = training['label'][0:INPUT_SIZE].values.reshape((INPUT_SIZE, 1))
+	zeros = np.where(y_train == 0)
+	y_train[zeros] = -1
 	del training, zeros
 
 	# read in csv, modify test 
@@ -26,8 +26,12 @@ def main():
 	test_labels[zeros] = -1
 	del test, zeros
 
-	unigram_train, unigram_test = build_unigram(training_text, test_text)
+	unigram_train, unigram_test = build_unigram(X_train, test_text)
 	print "done"
+
+	classifier = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(5, 5), random_state=1)
+	classifier.fit(X_train, y_train)
+	print("Training set score: %f" % classifier.score(X_train, y_train))
 
 # takes in raw data
 def build_unigram(training_data, test_data):

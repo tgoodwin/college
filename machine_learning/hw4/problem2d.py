@@ -12,8 +12,9 @@ def main():
     data = hw4data['data']
     labels = hw4data['labels']
     PARTITION = int(math.floor(0.8 * data.shape[0]))
-    THRESHOLD = 0.65064
+    # FOR PART C: uncomment the line below to transform data
     data = linear_transform(data)
+
     lifted_data = np.insert(data, 0, 1, axis=1)
     training_data = lifted_data[0:PARTITION]
     training_labels = labels[0:PARTITION]
@@ -21,13 +22,9 @@ def main():
     holdout_labels = labels[PARTITION:]
     gd_handler(training_data, training_labels, holdout_data, holdout_labels)
 
-def inspect_data(data):
-    for i in range(data.shape[0]):
-        print data[i]
-
 # scales the middle term of the hw4data set
 def linear_transform(data):
-    A = np.array([[1, 0, 0],[0,12,0],[0,0,1]])
+    A = np.array([[1, 0, 0],[0,11,0],[0,0,1]])
     return np.dot(data, A)
 
 def compute_objective(B, data, labels):
@@ -56,7 +53,7 @@ def descend_gradient(B, data, labels):
 def line_search(data, labels, gradient_b, B):
     stepsize = 1
     lambda_norm = np.dot(gradient_b, gradient_b.T)  # ||lambda||^2 term
-    B_diff = B - (stepsize * gradient_b)
+    B_diff = B - (stepsize * gradient_b)            # update solution
     obj_orig = compute_objective(B, data, labels)
     obj_diff = compute_objective(B_diff, data, labels)
 
@@ -88,6 +85,7 @@ def gd_handler(data, labels, h_data, h_labels):
     stepsize = 1
     best_holdout_rate = float('inf')
     obj = compute_objective(B, data, labels) #objective value
+
     while (1):
         steps += 1
         if is_power_of_two(steps):
@@ -95,8 +93,10 @@ def gd_handler(data, labels, h_data, h_labels):
             print steps, "objective: ", obj, "holdout error rate: ", holdout_rate
             if (holdout_rate > 0.99 * best_holdout_rate and steps >= 32):
                 break
+
             if holdout_rate < best_holdout_rate:
                 best_holdout_rate = holdout_rate
+
         gradient_b = descend_gradient(B, data, labels)
         stepsize = line_search(data, labels, gradient_b, B)
         B = B - (stepsize * gradient_b)
