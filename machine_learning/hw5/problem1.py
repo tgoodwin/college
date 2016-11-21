@@ -6,7 +6,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import KFold, cross_val_score
-INPUT_SIZE = 200
+INPUT_SIZE = 200000
 
 hyperparams = {
 	'hidden_layer_sizes' : [(5, 2), (5, 5), (10,), (2, 5)],
@@ -32,14 +32,13 @@ def main():
 
 	unigram_train, unigram_test = build_unigram(training_text, test_text)
 
-	best_alpha, best_dims = select_hyperparams(unigram_train, training_labels, hyperparams['alphas'], hyperparams['hidden_layer_sizes'])
-	print("selected hyperparamters: alpha=%f dims=%s" % (best_alpha, str(best_dims)))
+	best_alpha, best_dims = select_hyperparams(unigram_train, training_labels.ravel(), hyperparams['alphas'], hyperparams['hidden_layer_sizes'])
 
 	classifier = MLPClassifier(solver='lbgfs', alpha=best_alpha, hidden_layer_sizes=best_dims, random_state=1)
 	classifier.fit(unigram_train, training_labels)
 
-	print("Final training set score: %f" % classifier.score(unigram_train, training_labels))
-	print("Final test set score: %f" % classifier.score(unigram_test, test_labels))
+	print("Final training set score: %f" % classifier.score(unigram_train, training_labels.ravel()))
+	print("Final test set score: %f" % classifier.score(unigram_test, test_labels.ravel()))
 
 
 # takes in raw data
@@ -55,29 +54,32 @@ def select_hyperparams(X, Y, alphas, dims):
 	best_hyperparams = (alphas[0], dims[0])
 	for a in alphas:
 		for dim in dims:
-			print("Evaluating classifier with alpha=%f and dims=%s" % (a, str(dim)))
 			nnet = construct_classifier_with_hyperparameters(a, dim)
+			scores = cross_val_score(nnet, X, Y, cv=5, n_jobs=-1)
 			k = 5
-			avg_accuracy = Kfold_cross_validation(k, X, Y, nnet)
+			avg_accuracy = scores.mean()
+			print("Evaluating classifier with alpha=%f and dims=%s: SCORE=%s" % (a, str(dim), str(avg_accuracy)))
 			if avg_accuracy > best_tr_accuracy_so_far:
+				best_tr_accuracy_so_far = avg_accuracy
 				best_hyperparams = (a, dim)
 
+	print("selected hyperparamters: alpha=%f dims=%s. BEST SCORE: %s" % (best_hyperparams[0], str(best_hyperparams[1]), str(best_tr_accuracy_so_far)))
 	return best_hyperparams
 
 
-def Kfold_cross_validation(k, X, Y, classifier):
-	k_folds = KFold(n_splits = k)
-	n = 0
-	errorSum = 0.0
-	for train, test in k_folds.split(X):
-		n += 1
-		classifier.fit(X[train], Y[train])
-		err = classifier.score(X[test], Y[test])
-		print("Training set score on trial %d: %f" % (n, err))
-		errorSum += err
+# def Kfold_cross_validation(k, X, Y, classifier):
+# 	k_folds = KFold(n_splits = k)
+# 	n = 0
+# 	errorSum = 0.0
+# 	for train, test in k_folds.split(X):
+# 		n += 1
+# 		classifier.fit(X[train], Y[train])
+# 		err = classifier.score(X[test], Y[test])
+# 		print("Training set score on trial %d: %f" % (n, err))
+# 		errorSum += err
 
-	avg_error = float(errorSum) / float(k)
-	return avg_error
+# 	avg_error = float(errorSum) / float(k)
+# 	return avg_error
 
 def construct_classifier_with_hyperparameters(alpha_val, nnet_dims):
 	return MLPClassifier(solver='lbgfs', alpha=alpha_val, hidden_layer_sizes=nnet_dims, random_state=1)
