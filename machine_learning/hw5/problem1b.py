@@ -10,14 +10,14 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.preprocessing import StandardScaler
 
 from sklearn.model_selection import KFold, cross_val_score
-INPUT_SIZE = 20
+INPUT_SIZE = 2000
 
 #n_estimators
 #max_depth
 #min_samples_leaf
 
 
-max_depth = [None, 2, 5, 10]
+max_depth = [2, 5, 10, 20, 40]
 min_samples_leaf = [1, 5, 10]
 n_estimators = [50, 100, 150, 200]
 
