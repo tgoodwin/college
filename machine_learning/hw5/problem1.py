@@ -5,12 +5,13 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import KFold, cross_val_score
 INPUT_SIZE = 200000
 
 hyperparams = {
 	'hidden_layer_sizes' : [(5, 2), (5, 5), (10,), (2, 5)],
-	'alphas': [1e-5, 0.001, .01, 10.0]
+	'alphas': [1e-5, 0.001, .01, 10.0, 100.0]
 }
 
 def main():
@@ -30,7 +31,11 @@ def main():
 	test_labels[zeros] = -1
 	del test, zeros
 
+	scaler = StandardScaler(with_mean=False)
 	unigram_train, unigram_test = build_unigram(training_text, test_text)
+	scaler.fit(unigram_train)
+	unigram_train = scaler.transform(unigram_train)
+	unigram_test = scaler.transform(unigram_test)
 
 	best_alpha, best_dims = select_hyperparams(unigram_train, training_labels.ravel(), hyperparams['alphas'], hyperparams['hidden_layer_sizes'])
 
