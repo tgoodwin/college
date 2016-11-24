@@ -17,8 +17,8 @@ INPUT_SIZE = 2000
 #min_samples_leaf
 
 
-max_depth = [2, 5, 10, 20, 40]
-min_samples_leaf = [1, 5, 10]
+max_depth = [2]
+min_samples_leaf = [10, 8, 4, 2, 1]
 n_estimators = [50, 100, 150, 200]
 
 #n_jobs=-1
@@ -49,7 +49,7 @@ def main():
 	unigram_test = scaler.transform(unigram_test)
 
 	best_d, best_m, best_n = select_hyperparams(unigram_train, training_labels.ravel(), max_depth, min_samples_leaf, n_estimators)
-	print("\nselected hyperparamters: max_depth=%s min_samples=%s n_estimators=%s" % (str(best_d), str(best_m), str(best_m)))
+	print("\nselected hyperparamters: max_depth=%s min_samples=%s n_estimators=%s" % (str(best_d), str(best_m), str(best_n)))
 
 	final_tree_estimator = DecisionTreeClassifier(max_depth=best_d, min_samples_leaf=best_m)
 	final_ada = AdaBoostClassifier(base_estimator=final_tree_estimator, n_estimators=best_n)
