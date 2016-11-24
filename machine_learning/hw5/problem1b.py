@@ -6,6 +6,9 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier
+
+from sklearn.preprocessing import StandardScaler
+
 from sklearn.model_selection import KFold, cross_val_score
 INPUT_SIZE = 20
 
@@ -38,6 +41,12 @@ def main():
 	del test, zeros
 
 	unigram_train, unigram_test = build_unigram(training_text, test_text)
+
+	scaler = StandardScaler(with_mean=False)
+	unigram_train, unigram_test = build_unigram(training_text, test_text)
+	scaler.fit(unigram_train)
+	unigram_train = scaler.transform(unigram_train)
+	unigram_test = scaler.transform(unigram_test)
 
 	best_d, best_m, best_n = select_hyperparams(unigram_train, training_labels.ravel(), max_depth, min_samples_leaf, n_estimators)
 	print("\nselected hyperparamters: max_depth=%s min_samples=%s n_estimators=%s" % (str(best_d), str(best_m), str(best_m)))
