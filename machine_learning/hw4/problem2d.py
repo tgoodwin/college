@@ -20,6 +20,7 @@ def main():
     training_labels = labels[0:PARTITION]
     holdout_data = lifted_data[PARTITION:]
     holdout_labels = labels[PARTITION:]
+
     gd_handler(training_data, training_labels, holdout_data, holdout_labels)
 
 # scales the middle term of the hw4data set

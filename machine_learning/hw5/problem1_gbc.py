@@ -21,17 +21,17 @@ max_depth = [2, 3, 4]
 n_estimators = [50, 100, 150, 200]
 
 cv_params = {'max_depth': [3,5,7], 'min_child_weight': [1,3,5], 'n_estimators': [50, 100, 150]}
-ind_params = {'learning_rate': 0.1,'seed':0, 'objective': 'binary:logistic'}
 
-optimized_GBM = GridSearchCV(xgb.XGBClassifier(**ind_params), 
+optimized_GBM = GridSearchCV(xgb.XGBClassifier(), 
                             cv_params, 
-                             scoring = 'accuracy', cv = 5, n_jobs = -1)
+                             scoring = 'accuracy', cv = 5, n_jobs = -1, verbose=1)
 
 #n_jobs=-1
 
 def main():
 	# read in csv text, modify training data and labels
 	training = pd.read_csv('reviews_tr.csv')
+	dtrain = xgb.DMatrix(training)
 	training_text = training['text'][0:INPUT_SIZE]
 	training_labels = training['label'][0:INPUT_SIZE].values.reshape((INPUT_SIZE, 1))
 	zeros = np.where(training_labels == 0)
@@ -48,17 +48,9 @@ def main():
 
 	unigram_train, unigram_test = build_unigram(training_text, test_text)
 
-	optimized_GBM = GridSearchCV(xgb.XGBClassifier(**ind_params), cv_params, scoring = 'accuracy', cv = 5, n_jobs = -1)
-	print optimized_GBM.grid_scores_
-	# optimized_GBM.fit(final_train, y_train)
-
-	# best_d, best_n = select_hyperparams(unigram_train, training_labels.ravel(), max_depth, n_estimators)
-	# print("\nselected hyperparamters: max_depth=%s min_samples=%s n_estimators=%s" % (str(best_d), str(best_m), str(best_n)))
-
-	# final_tree_estimator = DecisionTreeClassifier(max_depth=best_d, min_samples_leaf=best_m)
-
-	print("Final training set score: %f" % final_gbc.score(unigram_train, training_labels.ravel()))
-	print("Final test set score: %f" % final_gbc.score(unigram_test, test_labels.ravel()))
+	clf = GridSearchCV(xgb.XGBClassifier(), cv_params, scoring = 'accuracy', cv = 5, n_jobs = -1, verbose=1)
+	clf.fit(unigram_train, unigram_test)
+	print clf.best_score_, clf.best_params_
 
 
 # takes in raw data
