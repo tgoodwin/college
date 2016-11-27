@@ -34,9 +34,9 @@ def main():
         training = xgb.DMatrix(unigram_train, training_labels)
 
         param = {'max_depth':2, 'eta':0.5, 'silent':1, 'objective':'binary:logistic' }
-        etas = [0.25, 0.5, 0.75]
+        etas = [0.1, 0.2, 0.3]
         depths = [2, 4, 6]
-        best_eta, best_depth = select_best_params(training, training_labels, etas, depths)
+        best_eta, best_depth = select_best_params(unigram_train, training_labels, etas, depths)
         print "best eta, depth = ", best_eta, best_depth
 
         best_params = {'max_depth':best_depth, 'eta':best_eta, 'silent':1, 'objective':'binary:logistic' }
@@ -48,8 +48,8 @@ def main():
 
         tester = xgb.DMatrix(unigram_test, test_labels)
         raw_preds = best_clf.predict(tester)
-        binary_preds = np.floor(raw_preds + 0.5)
-        print "Final test error: ", get_error_rate(test_labels, binary_preds)
+        test_preds = np.floor(raw_preds + 0.5)
+        print "Final test error: ", get_error_rate(test_labels, test_preds)
 
 def select_best_params(X, Y, etas, depths):
 	lowest_err = 1.0
@@ -71,8 +71,10 @@ def K_fold_cross_validation(k, X, Y, e, d):
 	param = {'max_depth':d, 'eta':e, 'silent':1, 'objective':'binary:logistic' }
 	for train, test in k_fold.split(X):
 		n += 1
-		clf = xgb.train(param, X[train], 100)
-		preds = np.floor(clf.predict(X[test]) + 0.5)
+		training = xgb.DMatrix(X[train], Y[train])
+		testing = xgb.DMatrix(X[test], Y[test])
+		clf = xgb.train(param, training, 100)
+		preds = np.floor(clf.predict(testing) + 0.5)
 		error = get_error_rate(preds, Y[test])
 		errorSum += error
 	
